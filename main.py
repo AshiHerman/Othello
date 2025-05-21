@@ -1,40 +1,51 @@
 from players.mcts import choose_move
-from game.tictactoe import TicTacToe
+from othello.othello_game import OthelloGame
+# from othello.othello_logic import Board
 import time
 
-PLAYER_HUMAN = "X"
-PLAYER_AI = "O"
+PLAYER_HUMAN = 1
+PLAYER_AI = -1
+BOARD_SIZE = 6
 
 # ------------ Human vs AI Gameplay ------------
 
-def get_valid_move(legal_moves):
+def get_valid_move(legal_moves, board_size):
     """
-    Prompts the user for a valid move until a correct one is entered.
+    Prompts the user for a valid move (row,col) until a correct one is entered.
+    Returns the move as a flat index.
     """
     while True:
         try:
-            move = int(input("Your move: "))
+            move_str = input("Your move (row,col): ")
+            row_str, col_str = move_str.split(",")
+            row = int(row_str.strip()) - 1
+            col = int(col_str.strip()) - 1
+            move = row * board_size + col
             if move in legal_moves:
-                return move - 1
-        except ValueError:
+                return move
+        except (ValueError, IndexError):
             pass
         print("Invalid move. Try again.")
+
 
 def play_human_vs_ai(starting):
     """
     Allows a human player to play against the AI, alternating turns until the game ends.
     """
-    game = TicTacToe()
+    # ------ Can be replaced by another game ------ #
+    board_size = BOARD_SIZE
+    game = OthelloGame(board_size)
+    # --------------------------------------------- #
     human = PLAYER_HUMAN if starting == 'h' else PLAYER_AI
     state = game.startState(human)
-    print(state)
+    game.print_board(state)
 
     while not game.isEnd(state):
+        game.print_board(state)
         if game.player(state) == PLAYER_HUMAN:
-            game.print_board(state)
-            moves = [a + 1 for a in game.actions(state)]
-            print("Legal moves:", moves)
-            action = get_valid_move(moves)
+            moves = [a for a in game.actions(state)]
+            print("Legal moves:", [(m//board_size+1, m%board_size+1) for m in moves])
+            action = get_valid_move(moves, board_size)
             state = game.enact(state, action)
         else:
             print("\nAI is thinking...")
@@ -60,7 +71,10 @@ def simulate_self_play(num_games=100):
     """
     Simulates a number of self-play games between two AI players and summarizes the results.
     """
-    game = TicTacToe()
+    # ------ Can be replaced by another game ------ #
+    board_size = BOARD_SIZE
+    game = OthelloGame(board_size)
+    # --------------------------------------------- #
     tally = {"X": 0, "O": 0, "draw": 0}
 
     for _ in range(num_games):
