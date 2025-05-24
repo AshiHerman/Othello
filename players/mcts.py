@@ -4,7 +4,7 @@ import random
 
 # ------------ Configuration ------------
 
-EPISODES_PER_MOVE = 10              # Number of MCTS rollouts per move
+EPISODES_PER_MOVE = 100              # Number of MCTS rollouts per move
 EXPLORATION_CONSTANT = math.sqrt(2)   # Exploration factor for UCT
 
 

@@ -1,9 +1,11 @@
 from __future__ import print_function
-#import sys
-#sys.path.append('..')
-# from Game import Game
+import sys
+sys.path.append('..')
+# from othello_logic import Board
 from .othello_logic import Board
 import numpy as np
+import matplotlib.pyplot as plt
+from matplotlib import patches
 
 class OthelloGame():#Game):
     square_content = {
@@ -117,6 +119,29 @@ class OthelloGame():#Game):
             print("|")
 
         print("-----------------------")
+
+    # ------------------ Implemented by me ------------------
+
+    def get_valid_move(self, state):
+        """
+        Prompts the user for a valid move (row,col) until a correct one is entered.
+        Returns the move as a flat index.
+        """
+        board_size = self.n
+        moves = [a for a in self.actions(state)]
+        print("Legal moves:", [(m//board_size+1, m%board_size+1) for m in moves])
+        while True:
+            try:
+                move_str = input("Your move (row,col): ")
+                row_str, col_str = move_str.split(",")
+                row = int(row_str.strip()) - 1
+                col = int(col_str.strip()) - 1
+                move = row * board_size + col
+                if move in moves:
+                    return move
+            except (ValueError, IndexError):
+                pass
+            print("Invalid move. Try again.")
     
     def startState(self, first_player=1):
         board = self.getInitBoard()
@@ -144,11 +169,84 @@ class OthelloGame():#Game):
     def player(self, state):
         return state[1]
 
-    def print_board(self, state):
-        board, _ = state
-        self.display(board)
+    # def print_board(self, state):
+    #     board, _ = state
+    #     self.display(board)
 
-# game = OthelloGame(6)
-# board = game.getInitBoard()
-# game.display(board)
-# print(game.getValidMoves(board, player=1))
+    def print_board(self, state):
+        """
+        Visualizes the Othello board and waits for the user to click a valid move.
+        Returns the move as a flat index.
+        """
+        board, player = state
+        n = self.n
+        valids = self.getValidMoves(board, player)
+
+        fig, ax = plt.subplots(figsize=(6, 6))
+        ax.set_xlim(0, n)
+        ax.set_ylim(0, n)
+        ax.set_xticks(np.arange(n+1))
+        ax.set_yticks(np.arange(n+1))
+        ax.set_xticklabels([])
+        ax.set_yticklabels([])
+        ax.grid(True, which='both', color='black', linewidth=1)
+        ax.set_facecolor((0.0, 0.6, 0.0))
+
+        piece_colors = {1: 'white', -1: 'black'}
+        alpha_color = {1: (1.0, 1.0, 1.0, 0.4), -1: (0.0, 0.0, 0.0, 0.4)}
+
+        for y in range(n):
+            for x in range(n):
+                piece = board[y][x]
+                cx, cy = x + 0.5, n - y - 0.5
+
+                if piece in piece_colors:
+                    ax.add_patch(patches.Circle((cx, cy), 0.4, color=piece_colors[piece], ec='black'))
+                idx = y * n + x
+                if valids[idx] == 1 and piece == 0:
+                    ax.add_patch(patches.Circle((cx, cy), 0.4, color=alpha_color[player], linewidth=0))
+
+        coord_text = ax.text(0.05, 1.01, '', transform=ax.transAxes, fontsize=12)
+
+        move_selected = {'index': None}
+
+        def on_motion(event):
+            if event.inaxes != ax:
+                coord_text.set_text('')
+                fig.canvas.draw_idle()
+                return
+            x, y = int(event.xdata), int(event.ydata)
+            if 0 <= x < n and 0 <= y < n:
+                board_y = n - y
+                coord_text.set_text(f"Hovering: ({board_y},{x + 1})")  # 1-indexed row,col
+            else:
+                coord_text.set_text('')
+            fig.canvas.draw_idle()
+
+        def on_click(event):
+            if event.inaxes != ax:
+                return
+            x, y = int(event.xdata), int(event.ydata)
+            row, col = n - y - 1, x
+            idx = row * n + col
+            if 0 <= row < n and 0 <= col < n and valids[idx] == 1:
+                move_selected['index'] = idx
+                plt.close(fig)
+
+        fig.canvas.mpl_connect('motion_notify_event', on_motion)
+        fig.canvas.mpl_connect('button_press_event', on_click)
+
+        ax.set_aspect('equal')
+        plt.title(f"Othello - {'White' if player == 1 else 'Black'} to move")
+        plt.tight_layout()
+        plt.show()
+
+        return move_selected['index']
+
+
+# game = OthelloGame(8)
+# state = game.startState()
+# move = game.show_board(state)
+# print("You clicked move:", move)
+# state = game.enact(state, move)
+

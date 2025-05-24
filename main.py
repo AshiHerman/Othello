@@ -1,90 +1,49 @@
+import random
 from players.mcts import choose_move
 from othello.othello_game import OthelloGame
-# from othello.othello_logic import Board
-import time
+from othello.othello_visualizer import play_interactive
+from tictactoe.tictactoe import TicTacToe
 
 PLAYER_HUMAN = 1
 PLAYER_AI = -1
-BOARD_SIZE = 6
+BOARD_SIZE = 4
 
 # ------------ Human vs AI Gameplay ------------
 
-def get_valid_move(legal_moves, board_size):
-    """
-    Prompts the user for a valid move (row,col) until a correct one is entered.
-    Returns the move as a flat index.
-    """
-    while True:
-        try:
-            move_str = input("Your move (row,col): ")
-            row_str, col_str = move_str.split(",")
-            row = int(row_str.strip()) - 1
-            col = int(col_str.strip()) - 1
-            move = row * board_size + col
-            if move in legal_moves:
-                return move
-        except (ValueError, IndexError):
-            pass
-        print("Invalid move. Try again.")
+def is_human_turn(state):
+    return state[1] == PLAYER_HUMAN
 
-
-def play_human_vs_ai(starting):
+def play_human_vs_ai(game, starting):
     """
     Allows a human player to play against the AI, alternating turns until the game ends.
     """
-    # ------ Can be replaced by another game ------ #
-    board_size = BOARD_SIZE
-    game = OthelloGame(board_size)
-    # --------------------------------------------- #
     human = PLAYER_HUMAN if starting == 'h' else PLAYER_AI
     state = game.startState(human)
-    game.print_board(state)
-
-    while not game.isEnd(state):
-        game.print_board(state)
-        if game.player(state) == PLAYER_HUMAN:
-            moves = [a for a in game.actions(state)]
-            print("Legal moves:", [(m//board_size+1, m%board_size+1) for m in moves])
-            action = get_valid_move(moves, board_size)
-            state = game.enact(state, action)
-        else:
-            print("\nAI is thinking...")
-            start = time.time()
-            action = choose_move(game, state)
-            print(f"AI plays {action} (in {time.time() - start:.2f}s)\n")
-            state = game.enact(state, action)
-
-    # Game has ended, display final result
-    game.print_board(state)
-    r = game.reward(state)  # +1 if X wins, -1 if O wins, 0 if draw
-    if r == +1:
-        print("🎉 You win!")
-    elif r == -1:
-        print("💻 AI wins!")
-    else:
-        print("🤝 Draw!")
+    play_interactive(game, state, is_human_turn, choose_move)
 
 
 # ------------ AI Self-Play Simulation ------------
 
-def simulate_self_play(num_games=100):
+def simulate_self_play(game, num_games=100):
     """
     Simulates a number of self-play games between two AI players and summarizes the results.
     """
-    # ------ Can be replaced by another game ------ #
-    board_size = BOARD_SIZE
-    game = OthelloGame(board_size)
-    # --------------------------------------------- #
     tally = {"X": 0, "O": 0, "draw": 0}
 
-    for _ in range(num_games):
+    for i in range(num_games):
+        print(f"Game #{i+1}")
         state = game.startState()
 
         # AI players alternate moves until game ends
         while not game.isEnd(state):
+            # action = random.choice(game.actions(state))
+            # state = game.enact(state, action)
+            # game.print_board(state)
+
             action = choose_move(game, state)
             state = game.enact(state, action)
-
+            # game.print_board(state)
+        
         # Tally result
         r = game.reward(state)
         if r == +1:
@@ -104,16 +63,21 @@ def simulate_self_play(num_games=100):
 # ------------ Program Entry Point ------------
 
 def main():
+    # ------ Can be replaced by another game ------ #
+    board_size = BOARD_SIZE
+    game = OthelloGame(board_size)
+    # game = TicTacToe()
+    # --------------------------------------------- #
     mode = input("Enter 'h' for Human start, 'a' for AI start, 's' for self-play: ").strip().lower()
     if mode in ['h', 'a']:
-        play_human_vs_ai(mode)
+        play_human_vs_ai(game, mode)
     elif mode == 's':
         try:
             n = int(input("How many self-play games? "))
         except ValueError:
             print("Invalid number, defaulting to 50.")
             n = 50
-        simulate_self_play(n)
+        simulate_self_play(game, n)
     else:
         print("Invalid mode selected. Exiting.")
 
