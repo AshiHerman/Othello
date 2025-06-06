@@ -6,7 +6,7 @@ from tictactoe.tictactoe import TicTacToe
 
 PLAYER_HUMAN = 1
 PLAYER_AI = -1
-BOARD_SIZE = 4
+BOARD_SIZE = 8
 
 # ------------ Human vs AI Gameplay ------------
 

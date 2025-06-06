@@ -1,4 +1,5 @@
 import numpy as np
+import random
 
 def move_str_to_coords(move):
     col = ord(move[0].upper()) - ord('A')
@@ -57,32 +58,49 @@ def get_moves(moves_str):
     moves = [moves_str[i:i+2] for i in range(0, len(moves_str.strip()), 2)]
     return [move_str_to_coords(m) for m in moves]
 
-def load_batch(filename, batch_size, batch_idx):
+def load_batch(filename, batch_size):
     """
-    Loads one batch (batch_idx, 0-based) of Othello games from filename.
-    Returns: all_states, all_moves (lists for this batch).
+    Yields batches of (all_states, all_moves) from filename.
+    Each batch is a tuple: (all_states, all_moves)
     """
-    start_line = batch_idx * batch_size
-    lines = []
+    batch_lines = []
     with open(filename) as f:
-        for i, line in enumerate(f):
-            if i < start_line:
-                continue
-            if len(lines) >= batch_size:
-                break
+        for line in f:
             game = line.strip()
             if not game:
                 continue
-            lines.append(game)
-    all_states = [get_board_states(game) for game in lines]
-    all_moves = [get_moves(game) for game in lines]
-    return all_states, all_moves
-
+            batch_lines.append(game)
+            all_states = []
+            all_moves = []
+            if len(batch_lines) == batch_size:
+                for game in batch_lines:
+                    states = get_board_states(game)
+                    idx = random.choice(range(len(states)))
+                    all_states += [states[idx]]
+                    all_moves += [get_moves(game)[idx]]
+                yield all_states, all_moves
+                batch_lines = []
+        # yield final batch if any remaining lines
+        all_states = []
+        all_moves = []
+        if batch_lines:
+            for game in batch_lines:
+                states = get_board_states(game)
+                idx = random.choice(range(len(states)))
+                all_states += [states[idx]]
+                all_moves += [get_moves(game)[idx]]
+            yield all_states, all_moves
 
 
 # Usage example:
 if __name__ == "__main__":
-    all_states, all_moves = load_batch('all_games.txt', 10, 0)
+    gen = load_batch('./parser/all_games.txt', 10)
+    all_states, all_moves = next(gen)
+    print(all_states)
+    print(all_moves)
+
+
+    # all_states, all_moves = load_batch('./parser/all_games.txt', 10)
 
     # print(all_states)
     # print(all_moves)
