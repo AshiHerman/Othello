@@ -2,8 +2,100 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 import numpy as np
 import time
+from othello.othello_game import get_valid
 
-def play_interactive(game, initial_state, is_human_turn_fn, choose_ai_move_fn, ai_move_pause=0.2):
+
+def show_state(
+    board,
+    player,
+    valid_moves=None,
+    message=None,
+    pause=True,
+    close_on_click=False,
+    show_valid_moves=True,
+    board_color="green",
+    valid_move_color=None, # If None, use alpha_color[player]
+    heatmap=None,          # numpy array (n, n) or None
+    heatmap_cmap="hot",    # heatmap color scheme
+    heatmap_alpha=0.55,    # heatmap transparency
+    show_colorbar=True,    # add a colorbar for heatmap
+):
+    """
+    Show a single Othello board state, optionally overlaying a heatmap of shape (n, n).
+    Now uses the same per-player alpha logic for available moves as play_interactive.
+    """
+    n = 8
+    valid_moves = get_valid(board, player)
+    fig, ax = plt.subplots(figsize=(6, 6))
+    ax.set_xlim(0, n)
+    ax.set_ylim(0, n)
+    ax.set_xticks(np.arange(n+1))
+    ax.set_yticks(np.arange(n+1))
+    ax.set_xticklabels([])
+    ax.set_yticklabels([])
+    ax.grid(True, which='both', color='black', linewidth=1)
+
+    # Set background color
+    if board_color == "gray":
+        board_bg = (0.92, 0.92, 0.92)
+    elif board_color == "green":
+        board_bg = (0.0, 0.6, 0.0)
+    else:
+        board_bg = board_color
+    ax.set_facecolor(board_bg)
+
+    # Optionally overlay heatmap
+    if heatmap is not None:
+        hm = np.array(heatmap).reshape(n, n)
+        vmin, vmax = np.min(hm), np.max(hm)
+        img = ax.imshow(
+            hm, cmap=heatmap_cmap, alpha=heatmap_alpha,
+            extent=(0, n, 0, n), origin='upper', vmin=vmin, vmax=vmax
+        )
+        if show_colorbar:
+            plt.colorbar(img, ax=ax, fraction=0.046, pad=0.04)
+
+    piece_colors = {1: 'white', -1: 'black'}
+    alpha_color = {1: (1.0, 1.0, 1.0, 0.4), -1: (0.0, 0.0, 0.0, 0.4)}  # White/Black with alpha
+
+    # Choose valid move color (dynamic by player unless overridden)
+    if valid_move_color is None:
+        available_color = alpha_color[player]
+    else:
+        available_color = valid_move_color
+
+    for y in range(n):
+        for x in range(n):
+            piece = board[y][x]
+            cx, cy = x + 0.5, n - y - 0.5
+            idx = y * n + x
+            if piece in piece_colors:
+                ax.add_patch(patches.Circle((cx, cy), 0.4, color=piece_colors[piece], ec='black'))
+            elif show_valid_moves and valid_moves is not None and valid_moves[idx] == 1:
+                ax.add_patch(patches.Circle((cx, cy), 0.4, color=available_color, linewidth=0))
+
+    ax.set_title(f"Othello - {'White' if player == 1 else 'Black'} to move")
+    if message:
+        ax.text(0.5, 0.5, message,
+                transform=ax.transAxes, fontsize=32, ha='center',
+                va='center', color='blue', weight='bold')
+    ax.set_aspect('equal')
+    fig.canvas.draw()
+    fig.canvas.flush_events()
+    if close_on_click:
+        def on_click(event):
+            plt.close(fig)
+        fig.canvas.mpl_connect('button_press_event', on_click)
+    if pause:
+        plt.show()
+    else:
+        plt.pause(0.001)
+    return fig, ax
+
+
+
+
+def play_interactive(game, initial_state, is_human_turn_fn, choose_ai_move_fn, ai_move_pause=1.5):
     """
     General interactive GUI game loop for any player setup.
     Adds a pause after the AI move before flipping opponent pieces.
@@ -89,7 +181,6 @@ def play_interactive(game, initial_state, is_human_turn_fn, choose_ai_move_fn, a
             t0 = time.time()
             action = choose_ai_move_fn(game, current_state[0])
             print(f"AI plays {action} (in {time.time() - t0:.2f}s)")
-            # --- PAUSE before flips ---
             time.sleep(ai_move_pause / 2)
             draw_ai_tile(current_state[0][0], action, current_state[0][1])
             time.sleep(ai_move_pause)

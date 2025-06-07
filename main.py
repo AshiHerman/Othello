@@ -3,13 +3,11 @@ from players.mcts import choose_move
 from othello.othello_game import OthelloGame
 from othello.othello_visualizer import play_interactive
 
-BOARD_SIZE = 4
+BOARD_SIZE = 8
 
 def play_human_vs_ai(game, human_player=1):
     state = game.startState(1)
     def is_human_turn(state): return state[1] == human_player
-    print(human_player)
-    print(is_human_turn(state))
     play_interactive(game, state, is_human_turn, choose_move)
 
 def play_human_vs_human(game):

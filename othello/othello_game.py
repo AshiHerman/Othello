@@ -122,27 +122,6 @@ class OthelloGame():#Game):
 
     # ------------------ Implemented by me ------------------
 
-    def get_valid_move(self, state):
-        """
-        Prompts the user for a valid move (row,col) until a correct one is entered.
-        Returns the move as a flat index.
-        """
-        board_size = self.n
-        moves = [a for a in self.actions(state)]
-        print("Legal moves:", [(m//board_size+1, m%board_size+1) for m in moves])
-        while True:
-            try:
-                move_str = input("Your move (row,col): ")
-                row_str, col_str = move_str.split(",")
-                row = int(row_str.strip()) - 1
-                col = int(col_str.strip()) - 1
-                move = row * board_size + col
-                if move in moves:
-                    return move
-            except (ValueError, IndexError):
-                pass
-            print("Invalid move. Try again.")
-    
     def startState(self, first_player=1):
         board = self.getInitBoard()
         return (board, first_player)
@@ -259,6 +238,9 @@ class OthelloGame():#Game):
 
         return move_selected['index']
 
+def get_valid(board, turn):
+    game = OthelloGame(8)
+    return game.getValidMoves(board, turn)
 
 # game = OthelloGame(8)
 # state = game.startState()
