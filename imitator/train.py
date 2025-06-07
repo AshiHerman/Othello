@@ -76,7 +76,7 @@ for epoch in range(EPOCHS):
         optimizer.step()
         train_loss += loss.item()
         total += target.size(0)
-        if total > 500:
+        if total > 20000:
             break
 
     model.eval()
@@ -94,7 +94,7 @@ for epoch in range(EPOCHS):
             cols = predicted % 8
             correct += (predicted == target).sum().item()
             total += target.size(0)
-            if total > 500:
+            if total > 2000:
                 break
     
     train_loss /= total
@@ -109,7 +109,7 @@ for epoch in range(EPOCHS):
         f"Val Acc: {accuracy:.4f}"
     )   
 
-torch.save(model.state_dict(), './imitator/model_saves/imitator1.pth')
+torch.save(model.state_dict(), './imitator/model_saves/imitator_x.pth')
 
 gen = load_batch('./parser/test.txt', batch_size=1)
 boards, moves = next(gen)           # boards: list of states, moves: list of moves

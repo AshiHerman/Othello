@@ -161,10 +161,26 @@ class OthelloGame():#Game):
         board, player = state
         return self.getGameEnded(board, player) != 0
 
+    def has_valid_moves(self, state):
+        """
+        Returns True if the given player has no valid moves (must pass).
+        """
+        board, player = state
+        valids = self.getValidMoves(board, player)
+        # The last entry in valids is the 'pass' move (by your convention)
+        # If only the last entry is 1, then the player must pass.
+        if np.sum(valids[:-1]) == 0 and valids[-1] == 1:
+            return False
+        return True
+
+
     def reward(self, state):
         board, player = state
         result = self.getGameEnded(board, player)
         return float(result)
+    
+    def switch(self, state):
+        return (state[0], -state[1])
 
     def player(self, state):
         return state[1]

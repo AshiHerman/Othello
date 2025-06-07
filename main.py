@@ -2,84 +2,60 @@ import random
 from players.mcts import choose_move
 from othello.othello_game import OthelloGame
 from othello.othello_visualizer import play_interactive
-from tictactoe.tictactoe import TicTacToe
 
-PLAYER_HUMAN = 1
-PLAYER_AI = -1
-BOARD_SIZE = 8
+BOARD_SIZE = 4
 
-# ------------ Human vs AI Gameplay ------------
-
-def is_human_turn(state):
-    return state[1] == PLAYER_HUMAN
-
-def play_human_vs_ai(game, starting):
-    """
-    Allows a human player to play against the AI, alternating turns until the game ends.
-    """
-    human = PLAYER_HUMAN if starting == 'h' else PLAYER_AI
-    state = game.startState(human)
+def play_human_vs_ai(game, human_player=1):
+    state = game.startState(1)
+    def is_human_turn(state): return state[1] == human_player
+    print(human_player)
+    print(is_human_turn(state))
     play_interactive(game, state, is_human_turn, choose_move)
 
+def play_human_vs_human(game):
+    state = game.startState(1)
+    def is_always_human(state): return True
+    def never_called_ai_move(game, state):
+        raise RuntimeError("AI should not be called in human vs human mode.")
+    play_interactive(game, state, is_always_human, never_called_ai_move)
 
-# ------------ AI Self-Play Simulation ------------
-
-def simulate_self_play(game, num_games=100):
-    """
-    Simulates a number of self-play games between two AI players and summarizes the results.
-    """
-    tally = {"X": 0, "O": 0, "draw": 0}
-
+def play_ai_vs_ai(game, num_games=100):
+    tally = {"1": 0, "-1": 0, "draw": 0}
     for i in range(num_games):
-        print(f"Game #{i+1}")
-        state = game.startState()
-
-        # AI players alternate moves until game ends
+        state = game.startState(1)
         while not game.isEnd(state):
-            # action = random.choice(game.actions(state))
-            # state = game.enact(state, action)
-            # game.print_board(state)
-
             action = choose_move(game, state)
             state = game.enact(state, action)
-            # game.print_board(state)
-        
-        # Tally result
-        r = game.reward(state)
+        r = game.getGameEnded(state[0], 1)
         if r == +1:
-            tally["X"] += 1
+            tally["1"] += 1
         elif r == -1:
-            tally["O"] += 1
+            tally["-1"] += 1
         else:
             tally["draw"] += 1
-
-    # Print summary of results
-    print(f"After {num_games} self-play games:")
-    print(f"  X wins:  {tally['X']}")
-    print(f"  O wins:  {tally['O']}")
-    print(f"  draws:   {tally['draw']}")
-
-
-# ------------ Program Entry Point ------------
+    print(f"After {num_games} AI self-play games:")
+    print(f"  Player 1 wins: {tally['1']}")
+    print(f"  Player -1 wins: {tally['-1']}")
+    print(f"  Draws: {tally['draw']}")
 
 def main():
-    # ------ Can be replaced by another game ------ #
-    board_size = BOARD_SIZE
-    game = OthelloGame(board_size)
-    # game = TicTacToe()
-    # --------------------------------------------- #
-    mode = input("Enter 'h' for Human start, 'a' for AI start, 's' for self-play: ").strip().lower()
-    if mode in ['h', 'a']:
-        play_human_vs_ai(game, mode)
+    game = OthelloGame(BOARD_SIZE)
+    print("Modes: 'h' = Human vs AI, 'a' = AI vs Human, '2' = Human vs Human, 's' = AI self-play")
+    mode = input("Select mode: ").strip().lower()
+    if mode == 'h':
+        play_human_vs_ai(game, human_player=1)
+    elif mode == 'a':
+        play_human_vs_ai(game, human_player=-1)
+    elif mode == '2':
+        play_human_vs_human(game)
     elif mode == 's':
         try:
             n = int(input("How many self-play games? "))
         except ValueError:
-            print("Invalid number, defaulting to 50.")
             n = 50
-        simulate_self_play(game, n)
+        play_ai_vs_ai(game, n)
     else:
-        print("Invalid mode selected. Exiting.")
+        print("Invalid mode.")
 
 if __name__ == "__main__":
     main()
