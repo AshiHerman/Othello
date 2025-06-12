@@ -58,38 +58,52 @@ def get_moves(moves_str):
     moves = [moves_str[i:i+2] for i in range(0, len(moves_str.strip()), 2)]
     return [move_str_to_coords(m) for m in moves]
 
+
 def load_batch(filename, batch_size):
     """
     Yields batches of (all_states, all_moves) from filename.
-    Each batch is a tuple: (all_states, all_moves)
+    Starts at a random line and wraps to the beginning to fill batches.
     """
-    batch_lines = []
+    # First, count lines in the file
     with open(filename) as f:
-        for line in f:
-            game = line.strip()
-            if not game:
-                continue
-            batch_lines.append(game)
+        lines = [line.strip() for line in f if line.strip()]
+    n = len(lines)
+    if n == 0:
+        return
+    
+    # Pick random start index
+    start = random.randint(0, n - 1)
+
+    # Wraparound iteration over all lines, starting at 'start'
+    idx = start
+    num_seen = 0
+    batch_lines = []
+    while num_seen < n:
+        game = lines[idx]
+        batch_lines.append(game)
+        idx = (idx + 1) % n  # Wraparound using modulo
+        num_seen += 1
+        if len(batch_lines) == batch_size:
             all_states = []
             all_moves = []
-            if len(batch_lines) == batch_size:
-                for game in batch_lines:
-                    states = get_board_states(game)
-                    idx = random.choice(range(len(states)))
-                    all_states += [states[idx]]
-                    all_moves += [get_moves(game)[idx]]
-                yield all_states, all_moves
-                batch_lines = []
-        # yield final batch if any remaining lines
-        all_states = []
-        all_moves = []
-        if batch_lines:
             for game in batch_lines:
                 states = get_board_states(game)
-                idx = random.choice(range(len(states)))
-                all_states += [states[idx]]
-                all_moves += [get_moves(game)[idx]]
+                pick = random.choice(range(len(states)))
+                all_states.append(states[pick])
+                all_moves.append(get_moves(game)[pick])
             yield all_states, all_moves
+            batch_lines = []
+    # yield final batch if any remaining lines
+    if batch_lines:
+        all_states = []
+        all_moves = []
+        for game in batch_lines:
+            states = get_board_states(game)
+            pick = random.choice(range(len(states)))
+            all_states.append(states[pick])
+            all_moves.append(get_moves(game)[pick])
+        yield all_states, all_moves
+
 
 
 # Usage example:

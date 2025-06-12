@@ -4,7 +4,6 @@ import numpy as np
 import time
 from othello.othello_game import get_valid
 
-
 def show_state(
     board,
     player,
@@ -14,19 +13,19 @@ def show_state(
     close_on_click=False,
     show_valid_moves=True,
     board_color="green",
-    valid_move_color=None, # If None, use alpha_color[player]
-    heatmap=None,          # numpy array (n, n) or None
-    heatmap_cmap="hot",    # heatmap color scheme
-    heatmap_alpha=0.55,    # heatmap transparency
-    show_colorbar=True,    # add a colorbar for heatmap
+    valid_move_color=None,
+    heatmap=None,
+    heatmap_cmap="hot",
+    heatmap_alpha=0.55,
+    show_colorbar=True,
 ):
-    """
-    Show a single Othello board state, optionally overlaying a heatmap of shape (n, n).
-    Now uses the same per-player alpha logic for available moves as play_interactive.
-    """
     n = 8
     valid_moves = get_valid(board, player)
     fig, ax = plt.subplots(figsize=(6, 6))
+
+    # Make extra space at the bottom for the message
+    fig.subplots_adjust(bottom=0.18)
+
     ax.set_xlim(0, n)
     ax.set_ylim(0, n)
     ax.set_xticks(np.arange(n+1))
@@ -47,7 +46,7 @@ def show_state(
     # Optionally overlay heatmap
     if heatmap is not None:
         hm = np.array(heatmap).reshape(n, n)
-        vmin, vmax = np.min(hm), np.max(hm)
+        vmin, vmax = np.nanmin(hm), np.nanmax(hm)
         img = ax.imshow(
             hm, cmap=heatmap_cmap, alpha=heatmap_alpha,
             extent=(0, n, 0, n), origin='upper', vmin=vmin, vmax=vmax
@@ -56,9 +55,8 @@ def show_state(
             plt.colorbar(img, ax=ax, fraction=0.046, pad=0.04)
 
     piece_colors = {1: 'white', -1: 'black'}
-    alpha_color = {1: (1.0, 1.0, 1.0, 0.4), -1: (0.0, 0.0, 0.0, 0.4)}  # White/Black with alpha
+    alpha_color = {1: (1.0, 1.0, 1.0, 0.4), -1: (0.0, 0.0, 0.0, 0.4)}
 
-    # Choose valid move color (dynamic by player unless overridden)
     if valid_move_color is None:
         available_color = alpha_color[player]
     else:
@@ -75,13 +73,37 @@ def show_state(
                 ax.add_patch(patches.Circle((cx, cy), 0.4, color=available_color, linewidth=0))
 
     ax.set_title(f"Othello - {'White' if player == 1 else 'Black'} to move")
+
+    # --- Draw message under the plot ---
     if message:
-        ax.text(0.5, 0.5, message,
-                transform=ax.transAxes, fontsize=32, ha='center',
-                va='center', color='blue', weight='bold')
+        # Place at bottom center (x=0.5, y=0.02 in figure coords)
+        fig.text(0.5, 0.05, message,
+                 ha='center', va='bottom', fontsize=8, color='black', weight='bold')
+
     ax.set_aspect('equal')
     fig.canvas.draw()
     fig.canvas.flush_events()
+
+        # Add hover coordinate display
+    hover_text = fig.text(0.5, -0.04, "", ha='center', va='top', fontsize=14, color='purple')
+
+    def format_hover(event):
+        # event.xdata and event.ydata are float board coordinates (None if out of axes)
+        if event.inaxes == ax and event.xdata is not None and event.ydata is not None:
+            # Board is from (0,0) bottom left to (n, n) top right; but origin='upper' in imshow so we flip y
+            # Othello usually wants (1,1) as top-left (y=0, x=0)
+            col = int(event.xdata)
+            row = n - int(event.ydata)
+            if 0 <= col < n and 1 <= row <= n:
+                hover_text.set_text(f"(x, y) = ({col+1}, {row})")
+            else:
+                hover_text.set_text("")
+        else:
+            hover_text.set_text("")
+        fig.canvas.draw_idle()
+
+    fig.canvas.mpl_connect('motion_notify_event', format_hover)
+
     if close_on_click:
         def on_click(event):
             plt.close(fig)
@@ -91,6 +113,8 @@ def show_state(
     else:
         plt.pause(0.001)
     return fig, ax
+
+
 
 
 

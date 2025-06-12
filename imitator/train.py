@@ -8,17 +8,21 @@ import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
+from othello.othello_game import OthelloGame
 from parser.make_state import load_batch
 from imitator.make_layers import *
 
 # Learns to predict human othello moves
 
 BATCH_SIZE = 60
-EPOCHS = 10
+EPOCHS = 20
 
 NUM_CHANNELS = 5
 NUM_HIDDEN_CHANNELS = 64
-NUM_LAYERS = 11
+NUM_LAYERS = 18
+
+TRAIN_PATH = './parser/train.txt'
+TEST_PATH = './parser/test.txt'
 
 def process(boards, moves):
     input = []
@@ -46,17 +50,24 @@ class ConvNet(nn.Module):
         super().__init__()
         in_channels = NUM_CHANNELS
         out_channels = NUM_HIDDEN_CHANNELS
-        layers = []
-        for _ in range(NUM_LAYERS):
-            layers.append(nn.Conv2d(in_channels, out_channels, kernel_size=3, stride=1, padding=1))
-            layers.append(nn.ReLU())
-            in_channels = out_channels  # Only the first layer uses 3 input channels
-        # Final output layer
-        layers.append(nn.Conv2d(out_channels, 64, kernel_size=1, stride=1))
-        self.net = nn.Sequential(*layers)
+        self.num_layers = NUM_LAYERS
+
+        self.convs = nn.ModuleList([
+            nn.Conv2d(in_channels if i==0 else out_channels + NUM_CHANNELS, out_channels, kernel_size=3, stride=1, padding=1)
+            for i in range(NUM_LAYERS)
+        ])
+        self.relu = nn.ReLU()
+        self.final = nn.Conv2d(out_channels + NUM_CHANNELS, 64, kernel_size=1, stride=1)
+
     
     def forward(self, input):
-        out = self.net(input)
+        x = input
+        x = self.relu(self.convs[0](x))
+        for conv in self.convs[1:]:
+            x = torch.cat([x, input], dim=1)
+            x = self.relu(conv(x))
+        x = torch.cat([x, input], dim=1)
+        out = self.final(x)
         out = out.mean([-2,-1])
         return out
 
@@ -76,7 +87,7 @@ def train():
 
         model.train()
         train_loss = 0.0
-        gen = load_batch('./parser/train.txt', BATCH_SIZE)
+        gen = load_batch(TRAIN_PATH, BATCH_SIZE)
         total = 0
         for boards, moves in tqdm.tqdm(gen):
             input, target = process(boards, moves)
@@ -86,8 +97,8 @@ def train():
             loss.backward()
             optimizer.step()
             train_loss += loss.item()
-            total += target.size(0)
-            if total > 20000:
+            total += 1
+            if total > 300:
                 break
 
         model.eval()
@@ -95,7 +106,7 @@ def train():
         correct = 0
         total = 0
         with torch.no_grad():
-            gen = load_batch('./parser/test.txt', BATCH_SIZE)
+            gen = load_batch(TEST_PATH, BATCH_SIZE)
             for boards, moves in tqdm.tqdm(gen):
                 input, target = process(boards, moves)
                 expected = model(input)
@@ -104,12 +115,12 @@ def train():
                 rows = predicted // 8
                 cols = predicted % 8
                 correct += (predicted == target).sum().item()
-                total += target.size(0)
-                if total > 1000:
+                total += 1
+                if total > 100:
                     break
         
-        train_loss /= total
-        test_loss /= total
+        train_loss /= (total*3/4)
+        test_loss /= (total/4)
         accuracy = correct / total
         train_losses.append(train_loss)        # <- ADD THIS LINE
         test_losses.append(test_loss)
@@ -120,6 +131,8 @@ def train():
             f"Val Loss: {test_loss:.4f}, "
             f"Val Acc: {accuracy:.4f}"
         )   
+
+    torch.save(model.state_dict(), './imitator/model_saves/imitator_x.pth')
 
     # ------ Plotting Loss and Accuracy Curves ------
     plt.figure(figsize=(10, 4))
@@ -139,26 +152,48 @@ def train():
     plt.legend()
     plt.tight_layout()
     plt.show()
+
+    return model
     # ----------------------------------------------
 
-    torch.save(model.state_dict(), './imitator/model_saves/imitator_x.pth')
+def find_probs(model, boards, moves):
+    input, _ = process(boards, moves)
+    expectations = model(input)
 
-    gen = load_batch('./parser/test.txt', batch_size=1)
-    boards, moves = next(gen)
-    input, target = process(boards, moves)
-    expected = model(input)
-    predicted = torch.argmax(expected, dim=1)[0]
-    row = predicted // 8
-    col = predicted % 8
+    all_probs = []
+    all_valid_moves = []
+    for i in range(len(moves)):
+        board = boards[i]
+        move = moves[i]
+        expected = expectations[i]
 
-    print("Example Prediction:")
-    print_board(boards[0])
-    print(f'Predicted: ({row.item() + 1}, {col.item() + 1})')
-    move = moves[0]
-    print("Actual:", end=' ')
-    print_move(move)
+        player = turn(board)
+        valid_moves = get_valid(board, player)
+        mask = np.array(valid_moves[:64]) == 0
+        expected[mask] = -np.inf
+        probs = torch.softmax(expected, dim=0).detach().numpy()  # shape (64,)
+        
+        predicted = torch.argmax(expected, dim=0).item()
+        row = predicted // 8
+        col = predicted % 8
 
+        print(f"Example Prediction #{i+1}:")
+        # print_board(boards[0])
+        print(f'Predicted: ({row + 1}, {col + 1})')
+        move = moves[i]
+        print("Actual:", end=' ')
+        print_move(move)
+        print('\n')
+
+        all_probs.append(probs)
+        all_valid_moves.append(valid_moves)
+
+    return all_probs, all_valid_moves
 
 
 if __name__ == "__main__":
-    train()
+    model = train()
+    
+    gen = load_batch(TEST_PATH, batch_size=1)
+    boards, moves = next(gen)
+    find_probs(model, boards, moves)

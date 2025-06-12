@@ -6,53 +6,37 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from parser.make_state import load_batch
 from imitator.make_layers import *
-from imitator.train import ConvNet, process
+from imitator.train import ConvNet, find_probs
 from othello.othello_visualizer import show_state
-from othello.othello_game import OthelloGame
 
-MODEL_PATH = './imitator/model_saves/imitator_3.pth'
+# Uses model that predicts expert othello player moves to create a heatmap over probabilities of next actions
+
+MODEL_PATH = './imitator/model_saves/imitator_3.5.pth'
 TEST_PATH = './parser/test.txt'
+BATCH_SIZE = 1
 
-def main(mask_invalid_moves=True):
+if __name__ == "__main__":
     model = ConvNet()
     model.load_state_dict(torch.load(MODEL_PATH, map_location='cpu'))
     model.eval()
 
-    gen = load_batch(TEST_PATH, batch_size=1)
+    gen = load_batch(TEST_PATH, batch_size=BATCH_SIZE)
     boards, moves = next(gen)
-    input, target = process(boards, moves)
-    board = boards[0]
-    player = turn(board)
-    expected = model(input)
-    probs = torch.softmax(expected[0], dim=0).detach().numpy()  # shape (64,)
+    all_probs, all_valid_moves = find_probs(model, boards, moves)
 
-    valid_moves = OthelloGame(8).getValidMoves(board, player)
-    if mask_invalid_moves:
-        mask = np.array(valid_moves[:64]) == 0
-        probs = probs.copy()
-        probs[mask] = -np.inf
+    for i in range(BATCH_SIZE):
+        board = boards[i]
+        player = turn(board)
+        heatmap = all_probs[i].reshape(8, 8)
 
-    pred_idx = np.argmax(probs)
-    row = int(pred_idx // 8)
-    col = int(pred_idx % 8)
+        show_state(
+            board,
+            player,
+            valid_moves=all_valid_moves[i],
+            message="Probabilities that expert player will make that move.",
+            heatmap=heatmap,
+            heatmap_cmap="viridis",
+            heatmap_alpha=0.6,
+            board_color="white"
+        )
 
-    print("Example Prediction:")
-    print_board(board)
-    print(f'Predicted: ({row + 1}, {col + 1})')
-    move = moves[0]
-    print("Actual:", end=' ')
-    print_move(move)
-
-    heatmap = torch.softmax(expected[0], dim=0).detach().numpy().reshape(8, 8)
-    show_state(
-        board,
-        player,
-        valid_moves=valid_moves,
-        heatmap=heatmap,
-        heatmap_cmap="viridis",
-        heatmap_alpha=0.6,
-        board_color="white"
-    )
-
-if __name__ == "__main__":
-    main(mask_invalid_moves=False)
