@@ -1,0 +1,187 @@
+alphazero/
+├─ __pycache__/
+│  ├─ Arena.cpython-312.pyc
+│  ├─ Coach.cpython-312.pyc
+│  ├─ Game.cpython-312.pyc
+│  ├─ MCTS.cpython-312.pyc
+│  ├─ NeuralNet.cpython-312.pyc
+│  └─ utils.cpython-312.pyc
+├─ connect4/
+│  ├─ keras/
+│  │  ├─ __init__.py
+│  │  ├─ Connect4NNet.py
+│  │  └─ NNet.py
+│  ├─ __init__.py
+│  ├─ Connect4Game.py
+│  ├─ Connect4Logic.py
+│  ├─ Connect4Players.py
+│  ├─ README.md
+│  └─ test_connect4.py
+├─ docker/
+│  ├─ Dockerfile.pytorch
+│  ├─ jupyter_notebook_config.py
+│  ├─ requirements.txt
+│  └─ run_jupyter.sh
+├─ dotsandboxes/
+│  ├─ keras/
+│  │  ├─ __init__.py
+│  │  ├─ DotsAndBoxesNNet.py
+│  │  └─ NNet.py
+│  ├─ __init__.py
+│  ├─ Convert Keras Model for use with Tensorflow.js.ipynb
+│  ├─ DotsAndBoxesGame.py
+│  ├─ DotsAndBoxesLogic.py
+│  ├─ DotsAndBoxesPlayers.py
+│  ├─ DotsAndBoxesServer.py
+│  ├─ DotsAndBoxesTest.py
+│  ├─ main-dotsandboxes.py
+│  ├─ pit-dotsandboxes.py
+│  ├─ Play Dots and Boxes using AlphaZero General.ipynb
+│  ├─ README.md
+│  └─ Train Dots and Boxes using AlphaZero General.ipynb
+├─ gobang/
+│  ├─ keras/
+│  │  ├─ GobangNNet.py
+│  │  └─ NNet.py
+│  ├─ __init__.py
+│  ├─ GobangGame.py
+│  ├─ GobangLogic.py
+│  └─ GobangPlayers.py
+├─ othello/
+│  ├─ __pycache__/
+│  │  ├─ __init__.cpython-312.pyc
+│  │  ├─ OthelloGame.cpython-312.pyc
+│  │  └─ OthelloLogic.cpython-312.pyc
+│  ├─ keras/
+│  │  ├─ __init__.py
+│  │  ├─ NNet.py
+│  │  └─ OthelloNNet.py
+│  ├─ pytorch/
+│  │  ├─ __pycache__/
+│  │  │  ├─ __init__.cpython-312.pyc
+│  │  │  ├─ NNet.cpython-312.pyc
+│  │  │  └─ OthelloNNet.cpython-312.pyc
+│  │  ├─ __init__.py
+│  │  ├─ NNet.py
+│  │  └─ OthelloNNet.py
+│  ├─ __init__.py
+│  ├─ OthelloGame.py
+│  ├─ OthelloLogic.py
+│  ├─ OthelloPlayers.py
+│  └─ README.md
+├─ pretrained_models/
+│  ├─ dotsandboxes/
+│  │  └─ keras/
+│  │     └─ 3x3/
+│  │        ├─ best.pth.tar.data-00000-of-00001
+│  │        └─ best.pth.tar.index
+│  ├─ othello/
+│  │  ├─ chainer/
+│  │  │  └─ 6x6_checkpoint_349.pth.tar
+│  │  ├─ keras/
+│  │  │  └─ 6x6 checkpoint_145.pth.tar
+│  │  └─ pytorch/
+│  │     ├─ 6x100x25_best.pth.tar
+│  │     ├─ 6x6_153checkpoints_best.pth.tar
+│  │     └─ 8x8_100checkpoints_best.pth.tar
+│  ├─ tictactoe/
+│  │  └─ keras/
+│  │     └─ best-25eps-25sim-10epch.pth.tar
+│  ├─ tictactoe_3d/
+│  │  └─ keras/
+│  │     └─ best-200eps-200sim-10epch.pth.tar
+│  ├─ 6x6.png
+│  └─ writeup.pdf
+├─ rts/
+│  ├─ keras/
+│  │  ├─ NNet.py
+│  │  └─ RTSNNet.py
+│  ├─ models/
+│  │  ├─ learn_100_iters/
+│  │  │  ├─ best_player1.pth.tar.data-00000-of-00001
+│  │  │  ├─ best_player1.pth.tar.index
+│  │  │  ├─ best_player2.pth.tar.data-00000-of-00001
+│  │  │  ├─ best_player2.pth.tar.index
+│  │  │  └─ README.md
+│  │  └─ README.md
+│  ├─ src/
+│  │  ├─ Board.py
+│  │  ├─ config_class.py
+│  │  ├─ config.py
+│  │  └─ encoders.py
+│  ├─ visualization/
+│  │  ├─ rts_pygame.py
+│  │  └─ rts_ue4.py
+│  ├─ install.sh
+│  ├─ learn.py
+│  ├─ pit.py
+│  ├─ README.md
+│  ├─ RTSGame.py
+│  └─ RTSPlayers.py
+├─ santorini/
+│  ├─ SANTORINI_README.md
+│  ├─ SantoriniGame.py
+│  ├─ SantoriniLogic.py
+│  └─ SantoriniPlayers.py
+├─ tafl/
+│  ├─ keras/
+│  │  ├─ __init__.py
+│  │  ├─ NNet.py
+│  │  └─ TaflNNet.py
+│  ├─ pytorch/
+│  │  ├─ __init__.py
+│  │  ├─ NNet.py
+│  │  └─ TaflNNet.py
+│  ├─ __init__.py
+│  ├─ Digits.py
+│  ├─ GameVariants.py
+│  ├─ mainTafl.py
+│  ├─ pitTafl.py
+│  ├─ TaflGame.py
+│  ├─ TaflLogic.py
+│  └─ TaflPlayers.py
+├─ temp/
+│  ├─ best.pth.tar
+│  ├─ checkpoint_0.pth.tar.examples
+│  ├─ checkpoint_1.pth.tar.examples
+│  ├─ checkpoint_2.pth.tar
+│  ├─ checkpoint_2.pth.tar.examples
+│  ├─ checkpoint_3.pth.tar
+│  ├─ checkpoint_3.pth.tar.examples
+│  ├─ checkpoint_4.pth.tar.examples
+│  └─ temp.pth.tar
+├─ tictactoe/
+│  ├─ keras/
+│  │  ├─ __init__.py
+│  │  ├─ NNet.py
+│  │  └─ TicTacToeNNet.py
+│  ├─ pretrained/
+│  │  └─ best.pth.tar.data-00000-of-00001
+│  ├─ __init__.py
+│  ├─ README.md
+│  ├─ TicTacToeGame.py
+│  ├─ TicTacToeLogic.py
+│  └─ TicTacToePlayers.py
+├─ tictactoe_3d/
+│  ├─ keras/
+│  │  ├─ __init__.py
+│  │  ├─ NNet.py
+│  │  └─ TicTacToeNNet.py
+│  ├─ README.md
+│  ├─ TicTacToeGame.py
+│  ├─ TicTacToeLogic.py
+│  └─ TicTacToePlayers.py
+├─ .gitignore
+├─ Arena.py
+├─ Coach.py
+├─ Game.py
+├─ LICENSE
+├─ main.py
+├─ MCTS.py
+├─ NeuralNet.py
+├─ pit.py
+├─ README.md
+├─ requirements.txt
+├─ setup_env.sh
+├─ test_all_games.py
+└─ utils.py

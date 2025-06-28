@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 import numpy as np
 import time
-from othello.othello_game import get_valid
+from othello.othello_game import OthelloGame, get_valid
 
 def show_state(
     board,
@@ -116,10 +116,7 @@ def show_state(
 
 
 
-
-
-
-def play_interactive(game, initial_state, is_human_turn_fn, choose_ai_move_fn, ai_move_pause=1.5):
+def play_interactive(game : OthelloGame, initial_state, is_human_turn_fn, choose_ai_move_fn, ai_move_pause=0):
     """
     General interactive GUI game loop for any player setup.
     Adds a pause after the AI move before flipping opponent pieces.
@@ -167,6 +164,7 @@ def play_interactive(game, initial_state, is_human_turn_fn, choose_ai_move_fn, a
         temp = board_before.copy()
         if action != n * n:  # Not a pass move
             row, col = divmod(action, n)
+            print(row, col)
             temp[row, col] = player
         draw_board((temp, -player))
 
@@ -204,7 +202,7 @@ def play_interactive(game, initial_state, is_human_turn_fn, choose_ai_move_fn, a
             print("\nAI is thinking...")
             t0 = time.time()
             action = choose_ai_move_fn(game, current_state[0])
-            print(f"AI plays {action} (in {time.time() - t0:.2f}s)")
+            print(f"AI plays ({(action//8)+1}, {(action%8)+1}) (in {time.time() - t0:.2f}s)")
             time.sleep(ai_move_pause / 2)
             draw_ai_tile(current_state[0][0], action, current_state[0][1])
             time.sleep(ai_move_pause)
@@ -218,13 +216,10 @@ def play_interactive(game, initial_state, is_human_turn_fn, choose_ai_move_fn, a
     black = np.sum(board == -1)
     if white > black:
         result_msg = f"White wins!\n {white}-{black}"
-        color = "blue"
     elif black > white:
         result_msg = f"Black wins!\n {black}-{white}"
-        color = "red"
     else:
         result_msg = "Draw!"
-        color = "green"
 
     draw_board(current_state[0], result_msg)
     print(result_msg)

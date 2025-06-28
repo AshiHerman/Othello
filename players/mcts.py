@@ -1,7 +1,6 @@
 import math
 import random
 
-
 # ------------ Configuration ------------
 
 EPISODES_PER_MOVE = 1#100              # Number of MCTS rollouts per move
@@ -103,11 +102,11 @@ def mcts(problem, state, episodes=EPISODES_PER_MOVE, c=EXPLORATION_CONSTANT):
 
 
 # ------------ Move Selection Interface ------------
-
-def choose_move(problem, state, episodes=EPISODES_PER_MOVE, c=EXPLORATION_CONSTANT):
-    """
-    Runs MCTS from the current state and returns the action with the highest visit count.
-    """
-    root = mcts(problem, state, episodes, c)
-    best = max(root.children, key=lambda ch: ch.visits)
-    return best.action
+class MCTS():
+    def choose_move(self, problem, state, episodes=EPISODES_PER_MOVE, c=EXPLORATION_CONSTANT):
+        """
+        Runs MCTS from the current state and returns the action with the highest visit count.
+        """
+        root = mcts(problem, state, episodes, c)
+        best = max(root.children, key=lambda ch: ch.visits)
+        return best.action
