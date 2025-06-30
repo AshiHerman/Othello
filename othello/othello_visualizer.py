@@ -116,7 +116,7 @@ def show_state(
 
 
 
-def play_interactive(game : OthelloGame, initial_state, is_human_turn_fn, choose_ai_move_fn, ai_move_pause=0):
+def play_interactive(game : OthelloGame, initial_state, is_human_turn_fn, choose_ai_move_fn, ai_move_pause=0, guidance=None):
     """
     General interactive GUI game loop for any player setup.
     Adds a pause after the AI move before flipping opponent pieces.
@@ -152,9 +152,12 @@ def play_interactive(game : OthelloGame, initial_state, is_human_turn_fn, choose
                     ax.add_patch(patches.Circle((cx, cy), 0.4, color=alpha_color[player], linewidth=0))
         ax.set_title(f"Othello - {'White' if player == 1 else 'Black'} to move")
         if message:
-            ax.text(0.5, 0.5, message,
-                    transform=ax.transAxes, fontsize=32, ha='center',
-                    va='center', color='blue', weight='bold')
+            fig.subplots_adjust(bottom=0.18)  # Make space for the message
+            fig.text(
+                0.5, 0.05, message,
+                ha='center', va='bottom', fontsize=8, color='black', weight='bold',
+                bbox=dict(facecolor='white', edgecolor='none', boxstyle='round,pad=0.2')
+            )
         ax.set_aspect('equal')
         fig.canvas.draw()
         fig.canvas.flush_events()
@@ -164,7 +167,6 @@ def play_interactive(game : OthelloGame, initial_state, is_human_turn_fn, choose
         temp = board_before.copy()
         if action != n * n:  # Not a pass move
             row, col = divmod(action, n)
-            print(row, col)
             temp[row, col] = player
         draw_board((temp, -player))
 
@@ -188,7 +190,11 @@ def play_interactive(game : OthelloGame, initial_state, is_human_turn_fn, choose
         return np.any(valids[:-1])
 
     while not game.isEnd(current_state[0]):
-        draw_board(current_state[0])
+        # Show guidance if it's the human's turn
+        message = guidance(current_state[0]) if guidance and is_human_turn_fn(current_state[0]) else None
+        draw_board(current_state[0], message=message)
+        if message:
+            print(message)
         if not has_valid_moves(current_state[0]):
             print(f"Player {current_state[0][1]} has no moves. Passing.")
             current_state[0] = game.enact(current_state[0], n * n)
@@ -201,12 +207,13 @@ def play_interactive(game : OthelloGame, initial_state, is_human_turn_fn, choose
         else:
             print("\nAI is thinking...")
             t0 = time.time()
-            action = choose_ai_move_fn(game, current_state[0])
+            action = choose_ai_move_fn(current_state[0])
             print(f"AI plays ({(action//8)+1}, {(action%8)+1}) (in {time.time() - t0:.2f}s)")
             time.sleep(ai_move_pause / 2)
             draw_ai_tile(current_state[0][0], action, current_state[0][1])
             time.sleep(ai_move_pause)
         current_state[0] = game.enact(current_state[0], action)
+
 
     # --- Game Over ---
     draw_board(current_state[0])
@@ -215,11 +222,11 @@ def play_interactive(game : OthelloGame, initial_state, is_human_turn_fn, choose
     white = np.sum(board == 1)
     black = np.sum(board == -1)
     if white > black:
-        result_msg = f"White wins!\n {white}-{black}"
+        result_msg = f"\t\t\t\t\tWHITE WINS!!!\t\t\t\t\t\n\t\t\t\t\t{white}-{black}\t\t\t\t\t"
     elif black > white:
-        result_msg = f"Black wins!\n {black}-{white}"
+        result_msg = f"\t\t\t\t\tBLACK WINS!!!\t\t\t\t\t\n\t\t\t\t\t{black}-{white}\t\t\t\t\t"
     else:
-        result_msg = "Draw!"
+        result_msg = "\t\t\t\t\tDraw!\t\t\t\t\t"
 
     draw_board(current_state[0], result_msg)
     print(result_msg)

@@ -1,6 +1,8 @@
 import math
 import random
 
+from othello.othello_game import OthelloGame
+
 # ------------ Configuration ------------
 
 EPISODES_PER_MOVE = 1#100              # Number of MCTS rollouts per move
@@ -103,7 +105,7 @@ def mcts(problem, state, episodes=EPISODES_PER_MOVE, c=EXPLORATION_CONSTANT):
 
 # ------------ Move Selection Interface ------------
 class MCTS():
-    def choose_move(self, problem, state, episodes=EPISODES_PER_MOVE, c=EXPLORATION_CONSTANT):
+    def choose_move(self, state, problem = OthelloGame(8), episodes=EPISODES_PER_MOVE, c=EXPLORATION_CONSTANT):
         """
         Runs MCTS from the current state and returns the action with the highest visit count.
         """

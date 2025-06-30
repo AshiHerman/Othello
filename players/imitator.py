@@ -21,6 +21,6 @@ class Imitator():
         self.model = ConvNet()
         self.model.load_state_dict(torch.load(MODEL_PATH, map_location='cpu'))
     
-    def choose_move(self, problem, state): # state given
+    def choose_move(self, state): # state given
         self.model.eval()
         return find_best(self.model, state[0])

@@ -1,21 +1,21 @@
 from players.mcts import MCTS
 from players.imitator import Imitator
-from alphazero.alphazero_player import AlphaZeroPlayer
-# from alphazero_player import AlphaZeroPlayer
+from players.alphazero import AlphaZero
 from othello.othello_game import OthelloGame
 from othello.othello_visualizer import play_interactive
+from guidance import *
 
 BOARD_SIZE = 8
 
 # AI player factory
 AI_PLAYERS = {
-    'm': ('MCTS', lambda game: MCTS()),
-    'i': ('Imitator', lambda game: Imitator()),
-    'z': ('AlphaZero', lambda game: AlphaZeroPlayer(game) if AlphaZeroPlayer.is_available() 
+    'm': ('MCTS', lambda : MCTS()),
+    'i': ('Imitator', lambda : Imitator()),
+    'z': ('AlphaZero', lambda : AlphaZero(OthelloGame(BOARD_SIZE)) if AlphaZero.is_available() 
           else print("AlphaZero not available, using MCTS") or MCTS())
 }
 
-def get_ai_player(game):
+def get_ai_player():
     """Get AI player from user input"""
     options = ', '.join([f"'{k}' = {v[0]}" for k, v in AI_PLAYERS.items()])
     print(f"Select AI: {options}")
@@ -25,15 +25,17 @@ def get_ai_player(game):
         if ai_type in AI_PLAYERS:
             name, factory = AI_PLAYERS[ai_type]
             print(f"Loading {name}...")
-            return factory(game)
+            return factory()
         print(f"Invalid choice. Use: {', '.join(AI_PLAYERS.keys())}")
 
-def play_human_vs_ai(game, ai, human_player=1):
+def play_human_vs_ai(game, ai, human_player=1, guidance=0):
     """Play human vs AI game"""
     state = game.startState(1)
+    func = show_probs if guidance else lambda s: None
     play_interactive(game, state, 
                     lambda s: s[1] == human_player, 
-                    ai.choose_move)
+                    ai.choose_move,
+                    guidance=func)
 
 def play_human_vs_human(game):
     """Play human vs human game"""
@@ -111,20 +113,21 @@ def main():
         mode = input("Select mode: ").strip().lower()
         
         if mode in ['h', 'a']:
-            ai = get_ai_player(game)
+            ai = get_ai_player()
+            guidance = 1 if input("Do you want guidance [y/n]: ").strip().lower() == 'y' else 0
             human_player = 1 if mode == 'h' else -1
-            play_human_vs_ai(game, ai, human_player)
+            play_human_vs_ai(game, ai, human_player, guidance)
             break
             
         elif mode == '2':
-            play_human_vs_human(game)
+            play_human_vs_human()
             break
             
         elif mode == 's':
             print("\nAI Player 1:")
-            ai1 = get_ai_player(game)
+            ai1 = get_ai_player()
             print("\nAI Player 2:")
-            ai2 = get_ai_player(game)
+            ai2 = get_ai_player()
             
             num_games = get_num_games()
             play_ai_vs_ai(game, ai1, ai2, num_games)
