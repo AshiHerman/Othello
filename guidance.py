@@ -22,6 +22,13 @@ def show_probs(state):
     alpha_move_str = f"AlphaZero move: {move_str(alpha_move)}, probability: {pi[alpha_move]:.3f}"
     imitator_move_str = f"Imitator move: {move_str(imitator_move)}, probability: {pi[imitator_move]:.3f}"
 
+    if imitator_move == alpha_move:
+        alpha_move_str = "AlphaZero and Imitator agree on the move."
+        imitator_move_str = "Go ahead and play it!"
+    else:
+        alpha_move_str = f"AlphaZero suggests: {move_str(alpha_move)} at strength: {pi[alpha_move]:.3f}"
+        imitator_move_str = f"While imitator expects: {move_str(imitator_move)} (strength: {pi[imitator_move]:.3f}). Watch out!"
+
     # print(alpha_move_str)
     # print(imitator_move_str)
     return "\n" + alpha_move_str + "\n" + imitator_move_str

@@ -11,7 +11,7 @@ from imitator.use_model import find_best, find_probs
 
 # Uses model that predicts expert othello player moves to create a heatmap over probabilities of next actions
 
-MODEL_PATH = './imitator/model_saves/imitator_3.5.pth'
+MODEL_PATH = './imitator/model_saves/imitator_y.pth'
 TEST_PATH = './parser/test.txt'
 BATCH_SIZE = 1
 

@@ -127,7 +127,7 @@ def get_feature_planes(state, prev_move=None, current_player=1):
     state = np.array(state)
     features = []
     features.extend(disc_layers(state, current_player))                   # 3
-    features.extend(history_layers(prev_move))                           # 4
+    # features.extend(history_layers(prev_move))                          
     features.extend(mobility_layers(state, current_player))               # 8
     features.extend(player_stability_gained_layers(state, current_player))# 8
     features.extend(opponent_stability_gained_layers(state, current_player))# 8
@@ -140,6 +140,10 @@ def get_feature_planes(state, prev_move=None, current_player=1):
 def print_layer(layer):
     for row in layer:
         print(' '.join(f"{int(v):2}" for v in row))
+
+def print_move(move):
+    row, col = move
+    print(f'({row+1}, {col+1})')
 
 def turn(state):
     count_pieces = 0
