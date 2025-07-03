@@ -15,15 +15,16 @@ from imitator.make_layers import get_feature_planes, turn  # use your revised ve
 
 # Learns to predict human othello moves
 
-BATCH_SIZE = 40 #60
-EPOCHS = 3
+BATCH_SIZE = 130
+EPOCHS = 25
 
 NUM_CHANNELS = 38
 NUM_HIDDEN_CHANNELS = 64
-NUM_LAYERS = 12
+NUM_LAYERS = 8
 
 TRAIN_PATH = './parser/train.txt'
 TEST_PATH = './parser/test.txt'
+MODEL_PATH = './imitator/model_saves/imitator_y.pth'
 
 
 def process_boards(boards, moves=None):
@@ -88,23 +89,31 @@ class ConvNet(nn.Module):
         return out
 
 
-
 def train():
     model = ConvNet()
+    if os.path.exists(MODEL_PATH):
+        model.load_state_dict(torch.load(MODEL_PATH, map_location='cpu'))
+        print(f"Model loaded from: {MODEL_PATH}")
+    else:
+        print(f"Model file does not exist at: {MODEL_PATH}")
+
     criterion = torch.nn.CrossEntropyLoss()
-    optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
+    optimizer = torch.optim.Adam(model.parameters(), lr=0.0008)
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, patience=2, factor=0.5)
 
     test_losses = []
     test_accuracies = []
-    train_losses = []   # <- ADD THIS LINE
+    train_losses = []
 
     for epoch in range(EPOCHS):
-        print(f"Epoch #{epoch + 1}")
+        print(f"\nEpoch #{epoch + 1}")
 
+        # Training phase
         model.train()
         train_loss = 0.0
+        train_batches = 0
         gen = load_batch(TRAIN_PATH, BATCH_SIZE)
-        total = 0
+        
         for boards, moves in tqdm.tqdm(gen):
             input = process_boards(boards)
             target = process_moves(moves)
@@ -114,14 +123,17 @@ def train():
             loss.backward()
             optimizer.step()
             train_loss += loss.item()
-            total += 1
-            if total > 90:
+            train_batches += 1
+            if train_batches > 120:  # Use more training data
                 break
 
+        # Validation phase
         model.eval()
         test_loss = 0.0
         correct = 0
-        total = 0
+        total_samples = 0
+        test_batches = 0
+        
         with torch.no_grad():
             gen = load_batch(TEST_PATH, BATCH_SIZE)
             for boards, moves in tqdm.tqdm(gen):
@@ -131,24 +143,32 @@ def train():
                 test_loss += criterion(expected, target).item()
                 predicted = torch.argmax(expected, dim=1)
                 correct += (predicted == target).sum().item()
-                total += 1
-                if total > 30:
+                total_samples += len(target)  # Count actual samples
+                test_batches += 1
+                if test_batches > 40:  # More validation data
                     break
         
-        train_loss /= (total*3/4)
-        test_loss /= (total/4)
-        accuracy = correct / total
-        train_losses.append(train_loss)        # <- ADD THIS LINE
-        test_losses.append(test_loss)
+        # Calculate metrics correctly
+        avg_train_loss = train_loss / train_batches
+        avg_test_loss = test_loss / test_batches
+        accuracy = correct / total_samples
+        
+        train_losses.append(avg_train_loss)
+        test_losses.append(avg_test_loss)
         test_accuracies.append(accuracy)
+        
+        # Learning rate scheduling
+        scheduler.step(avg_test_loss)
+        
         print(
             f"Epoch {epoch+1}/{EPOCHS} — "
-            f"Train Loss: {train_loss:.4f}, "
-            f"Val Loss: {test_loss:.4f}, "
-            f"Val Acc: {accuracy:.4f}"
-        )   
+            f"Train Loss: {avg_train_loss:.4f}, "
+            f"Val Loss: {avg_test_loss:.4f}, "
+            f"Val Acc: {accuracy:.4f}, "
+            f"LR: {optimizer.param_groups[0]['lr']:.6f}"
+        )
 
-    torch.save(model.state_dict(), './imitator/model_saves/imitator_x.pth')
+        torch.save(model.state_dict(), './imitator/model_saves/imitator_y.pth')
 
     # ------ Plotting Loss and Accuracy Curves ------
     plt.figure(figsize=(10, 4))

@@ -50,18 +50,21 @@ def find_probs(model, boards, moves):
         row = predicted // 8
         col = predicted % 8
 
-        print(f"Example Prediction #{i+1}:")
-        # print_board(boards[0])
-        print(f'Predicted: ({row + 1}, {col + 1})')
+        # print(f"Example Prediction #{i+1}:")
+        # # print_board(boards[0])
+        # print(f'Predicted: ({row + 1}, {col + 1})')
+        # move = moves[i]
+        # print("Actual:", end=' ')
+        # print_move(move)
+        # print('\n')
+
         move = moves[i]
-        print("Actual:", end=' ')
-        print_move(move)
-        print('\n')
+        message = f"Predicted: ({row + 1}, {col + 1})\n Actual: {(move[0] + 1, move[1] + 1)}"
 
         all_probs.append(probs)
         all_valid_moves.append(valid_moves)
 
-    return all_probs, all_valid_moves
+    return all_probs, all_valid_moves, message
 
 
 def heatmap():
@@ -71,7 +74,7 @@ def heatmap():
 
     gen = load_batch(TEST_PATH, batch_size=BATCH_SIZE)
     boards, moves = next(gen)
-    all_probs, all_valid_moves = find_probs(model, boards, moves)
+    all_probs, all_valid_moves, message = find_probs(model, boards, moves)
     find_best(model, boards[0])
 
     for i in range(BATCH_SIZE):
@@ -83,7 +86,7 @@ def heatmap():
             board,
             player,
             valid_moves=all_valid_moves[i],
-            message="Probabilities that expert player will make that move.",
+            message=message,
             heatmap=heatmap,
             heatmap_cmap="viridis",
             heatmap_alpha=0.6,

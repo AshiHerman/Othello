@@ -28,10 +28,15 @@ def show_state(
 
     ax.set_xlim(0, n)
     ax.set_ylim(0, n)
+    
+    # Add ticks for grid lines at every cell boundary (as before)
     ax.set_xticks(np.arange(n+1))
     ax.set_yticks(np.arange(n+1))
-    ax.set_xticklabels([])
-    ax.set_yticklabels([])
+
+    # Add labels centered between grid lines for each row/column (1-based, like Othello)
+    ax.set_xticklabels([''] + ['\n'+str(i+1)+'            ' for i in range(n)])  # '' for left margin
+    ax.set_yticklabels([''] + ['\n\n\n'+str(n-i)+'   ' for i in range(n)])  # '' for bottom margin, rows top-down
+
     ax.grid(True, which='both', color='black', linewidth=1)
 
     # Set background color
@@ -133,10 +138,14 @@ def play_interactive(game : OthelloGame, initial_state, is_human_turn_fn, choose
         valids = game.getValidMoves(board, player)
         ax.set_xlim(0, n)
         ax.set_ylim(0, n)
+        # Add ticks for grid lines at every cell boundary (as before)
         ax.set_xticks(np.arange(n+1))
         ax.set_yticks(np.arange(n+1))
-        ax.set_xticklabels([])
-        ax.set_yticklabels([])
+
+        # Add labels centered between grid lines for each row/column (1-based, like Othello)
+        ax.set_xticklabels([''] + ['\n'+str(i+1)+'            ' for i in range(n)])  # '' for left margin
+        ax.set_yticklabels([''] + ['\n\n\n'+str(n-i)+'   ' for i in range(n)])  # '' for bottom margin, rows top-down
+
         ax.grid(True, which='both', color='black', linewidth=1)
         ax.set_facecolor((0.0, 0.6, 0.0))
         piece_colors = {1: 'white', -1: 'black'}
@@ -222,11 +231,11 @@ def play_interactive(game : OthelloGame, initial_state, is_human_turn_fn, choose
     white = np.sum(board == 1)
     black = np.sum(board == -1)
     if white > black:
-        result_msg = f"\t\t\t\t\tWHITE WINS!!!\t\t\t\t\t\n\t\t\t\t\t{white}-{black}\t\t\t\t\t"
+        result_msg = f"            WHITE WINS!!!               \n               {white}-{black}               "
     elif black > white:
-        result_msg = f"\t\t\t\t\tBLACK WINS!!!\t\t\t\t\t\n\t\t\t\t\t{black}-{white}\t\t\t\t\t"
+        result_msg = f"            BLACK WINS!!!               \n               {black}-{white}               "
     else:
-        result_msg = "\t\t\t\t\tDraw!\t\t\t\t\t"
+        result_msg = "               Draw!               "
 
     draw_board(current_state[0], result_msg)
     print(result_msg)

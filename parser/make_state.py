@@ -112,12 +112,7 @@ if __name__ == "__main__":
     all_states, all_moves = next(gen)
     print(all_states)
     print(all_moves)
-
-
-    # all_states, all_moves = load_batch('./parser/all_games.txt', 10)
-
-    # print(all_states)
-    # print(all_moves)
+    
 
     # with open('states.txt', 'w') as sf, open('moves.txt', 'w') as mf:
     #     for states, moves in zip(all_states, all_moves):
