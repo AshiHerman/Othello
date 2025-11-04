@@ -3,6 +3,7 @@ from players.imit import Imitator
 from players.az import AlphaZero
 from othello.othello_game import OthelloGame
 from othello.othello_visualizer import play_interactive
+from othello.othello_text_visualizer import play_interactive_text
 from guidance import *
 
 BOARD_SIZE = 8
@@ -29,21 +30,33 @@ def get_ai_player():
             return factory()
         print(f"Invalid choice. Use: {', '.join(AI_PLAYERS.keys())}")
 
-def play_human_vs_ai(game, ai, human_player=1, guidance=0):
-    """Play human vs AI game"""
-    state = game.startState(1)
-    func = show_probs if guidance else lambda s: None
-    play_interactive(game, state, 
-                    lambda s: s[1] == human_player, 
-                    ai.choose_move,
-                    guidance=func)
+# Modified helper function:
 
-def play_human_vs_human(game):
-    """Play human vs human game"""
+# Added 'runner_fn' as a new argument
+def play_human_vs_ai(game, ai, human_player=1, guidance=0, runner_fn=play_interactive): 
+    """Play human vs AI game, using the specified runner function."""
     state = game.startState(1)
-    play_interactive(game, state, 
-                    lambda s: True, 
-                    lambda g, s: None)
+    # Ensure show_probs is available if guidance is 1
+    func = show_probs if guidance else lambda s: None 
+    
+    # Now calls the selected runner_fn (either play_interactive or play_interactive_text)
+    runner_fn(game, state, 
+              lambda s: s[1] == human_player, 
+              ai.choose_move,
+              # ai_move_pause is only relevant for GUI, but harmless for text
+              ai_move_pause=1 if runner_fn == play_interactive else 0,
+              guidance=func)
+
+# Added 'runner_fn' as a new argument
+def play_human_vs_human(game, runner_fn=play_interactive):
+    """Play human vs human game, using the specified runner function."""
+    state = game.startState(1)
+    
+    # Now calls the selected runner_fn
+    runner_fn(game, state, 
+              lambda s: True, 
+              lambda s: None,
+              ai_move_pause=0) # ai_move_pause is ignored since there's no AI
 
 def play_ai_vs_ai(game, ai1, ai2, num_games=100):
     """Play AI vs AI games and show results"""
@@ -91,23 +104,44 @@ def get_num_games():
             print("Please enter a valid number")
 
 def main():
-    """Main game loop"""
+    """Main game loop with mode selection and visualization choice."""
     game = OthelloGame(BOARD_SIZE)
     
     print("🔴 Othello Game 🔴")
     print("=" * 30)
     
-    # Game mode selection
+    # --- New: Choose Visualization Mode ---
+    print("Choose Visualization Mode:")
+    print("  'v' = Visual (Matplotlib GUI)")
+    print("  't' = Textual (Plain Console)")
+
+    while True:
+        vis_mode = input("Select visualization mode: ").strip().lower()
+        if vis_mode == 'v':
+            # Use the original GUI function
+            interactive_runner = play_interactive 
+            # Note: The GUI runner is designed to use mouse clicks, so AI vs AI is usually done without it.
+            print("Visual mode selected. Note: AI vs AI mode will run without the GUI loop.")
+            break
+        elif vis_mode == 't':
+            # Use the new Text function
+            interactive_runner = play_interactive_text 
+            print("Textual mode selected.")
+            break
+        else:
+            print("Invalid choice. Use 'v' or 't'.")
+    
+    print("-" * 30)
+    
+    # Game mode selection (H vs AI, H vs H, AI vs AI)
     modes = {
         'h': 'Human vs AI',
         'a': 'AI vs Human', 
         '2': 'Human vs Human',
-        's': 'AI vs AI'
+        's': 'AI vs AI (Silent Run)' # Changed for clarity, as this is typically non-interactive
     }
-    
-    print("Game modes:")
-    for key, desc in modes.items():
-        print(f"  '{key}' = {desc}")
+    for k, v in modes.items():  
+        print(f"  '{k}' = {v}")
     
     while True:
         mode = input("Select mode: ").strip().lower()
@@ -116,19 +150,20 @@ def main():
             ai = get_ai_player()
             guidance = 1 if input("Do you want guidance [y/n]: ").strip().lower() == 'y' else 0
             human_player = 1 if mode == 'h' else -1
-            play_human_vs_ai(game, ai, human_player, guidance)
+            
+            # --- Key Change: Use the selected runner function ---
+            play_human_vs_ai(game, ai, human_player, guidance, interactive_runner) 
             break
             
         elif mode == '2':
-            play_human_vs_human(game)
+            # --- Key Change: Use the selected runner function ---
+            play_human_vs_human(game, interactive_runner) 
             break
             
         elif mode == 's':
-            print("\nAI Player 1:")
+            # AI vs AI is usually done without an interactive board
             ai1 = get_ai_player()
-            print("\nAI Player 2:")
             ai2 = get_ai_player()
-            
             num_games = get_num_games()
             play_ai_vs_ai(game, ai1, ai2, num_games)
             break
