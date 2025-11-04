@@ -14,7 +14,7 @@ import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from players.alphazero import PolicyP, PolicyV, AlphaZeroMCTS
+from players.az import PolicyP, PolicyV, AlphaZeroMCTS
 from othello.othello_game import OthelloGame
 
 class AlphaZeroTrainer:

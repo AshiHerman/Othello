@@ -15,7 +15,7 @@ import time
 from dataclasses import dataclass
 
 # Import the AlphaZero components
-from players.alphazero import AlphaZero, PolicyValueNetwork, MCTS
+from players.az import AlphaZero, PolicyValueNetwork, MCTS
 
 @dataclass
 class TrainingConfig:

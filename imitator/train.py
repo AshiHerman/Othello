@@ -1,3 +1,8 @@
+"""
+train.py - Trains a convolutional neural network to imitate human Othello moves.
+Handles data loading, model definition, training loop, and evaluation.
+"""
+
 from matplotlib import pyplot as plt
 import numpy as np
 import torch
@@ -16,11 +21,11 @@ from imitator.make_layers import get_feature_planes, turn  # use your revised ve
 # Learns to predict human othello moves
 
 BATCH_SIZE = 130
-EPOCHS = 25
+EPOCHS = 30
 
 NUM_CHANNELS = 38
 NUM_HIDDEN_CHANNELS = 64
-NUM_LAYERS = 8
+NUM_LAYERS = 10
 
 TRAIN_PATH = './parser/train.txt'
 TEST_PATH = './parser/test.txt'
@@ -28,31 +33,25 @@ MODEL_PATH = './imitator/model_saves/imitator_y.pth'
 
 
 def process_boards(boards, moves=None):
-    """
-    Takes a list of boards (optionally with moves) and returns input tensor suitable for the model.
-    """
+    """Convert a list of boards (optionally with moves) to input tensor for the model."""
     inputs = []
     for idx, board in enumerate(boards):
-        # If you want to include move history, pass prev_moves here (for now: only most recent move)
-        # prev_moves = moves[idx] if moves is not None else None
+        # Optionally include move history
         player = turn(board)
         features = get_feature_planes(board, current_player=player)
         inputs.append(features)
-    # (batch_size, num_channels, 8, 8)
     inputs = np.array(inputs)
     return torch.tensor(inputs, dtype=torch.float32)
 
 
 def process_moves(moves):
-    """
-    Takes a list of moves and returns target tensor.
-    Each move should be a tuple (row, col).
-    """
+    """Convert a list of moves (row, col) to target tensor for training."""
     targets = [move[0]*8 + move[1] for move in moves]
     return torch.tensor(targets, dtype=torch.long)
 
 
 class ResidualBlock(nn.Module):
+    """Residual block for convolutional neural network."""
     def __init__(self, channels):
         super().__init__()
         self.conv1 = nn.Conv2d(channels, channels, 3, 1, 1)
@@ -69,6 +68,7 @@ class ResidualBlock(nn.Module):
         return out
 
 class ConvNet(nn.Module):
+    """Convolutional neural network for Othello move prediction."""
     def __init__(self):
         super().__init__()
         self.input_conv = nn.Conv2d(NUM_CHANNELS, NUM_HIDDEN_CHANNELS, 3, 1, 1)
@@ -90,7 +90,9 @@ class ConvNet(nn.Module):
 
 
 def train():
+    """Train the ConvNet model on Othello move data and plot loss/accuracy curves."""
     model = ConvNet()
+    # Load model if exists
     if os.path.exists(MODEL_PATH):
         model.load_state_dict(torch.load(MODEL_PATH, map_location='cpu'))
         print(f"Model loaded from: {MODEL_PATH}")
@@ -98,7 +100,7 @@ def train():
         print(f"Model file does not exist at: {MODEL_PATH}")
 
     criterion = torch.nn.CrossEntropyLoss()
-    optimizer = torch.optim.Adam(model.parameters(), lr=0.0008)
+    optimizer = torch.optim.Adam(model.parameters(), lr=0.0003)
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, patience=2, factor=0.5)
 
     test_losses = []
@@ -108,12 +110,11 @@ def train():
     for epoch in range(EPOCHS):
         print(f"\nEpoch #{epoch + 1}")
 
-        # Training phase
+        # --- Training phase ---
         model.train()
         train_loss = 0.0
         train_batches = 0
         gen = load_batch(TRAIN_PATH, BATCH_SIZE)
-        
         for boards, moves in tqdm.tqdm(gen):
             input = process_boards(boards)
             target = process_moves(moves)
@@ -124,16 +125,15 @@ def train():
             optimizer.step()
             train_loss += loss.item()
             train_batches += 1
-            if train_batches > 120:  # Use more training data
+            if train_batches > 120:
                 break
 
-        # Validation phase
+        # --- Validation phase ---
         model.eval()
         test_loss = 0.0
         correct = 0
         total_samples = 0
         test_batches = 0
-        
         with torch.no_grad():
             gen = load_batch(TEST_PATH, BATCH_SIZE)
             for boards, moves in tqdm.tqdm(gen):
@@ -143,23 +143,18 @@ def train():
                 test_loss += criterion(expected, target).item()
                 predicted = torch.argmax(expected, dim=1)
                 correct += (predicted == target).sum().item()
-                total_samples += len(target)  # Count actual samples
+                total_samples += len(target)
                 test_batches += 1
-                if test_batches > 40:  # More validation data
+                if test_batches > 40:
                     break
-        
-        # Calculate metrics correctly
+        # --- Metrics and learning rate scheduling ---
         avg_train_loss = train_loss / train_batches
         avg_test_loss = test_loss / test_batches
         accuracy = correct / total_samples
-        
         train_losses.append(avg_train_loss)
         test_losses.append(avg_test_loss)
         test_accuracies.append(accuracy)
-        
-        # Learning rate scheduling
         scheduler.step(avg_test_loss)
-        
         print(
             f"Epoch {epoch+1}/{EPOCHS} — "
             f"Train Loss: {avg_train_loss:.4f}, "
@@ -167,7 +162,6 @@ def train():
             f"Val Acc: {accuracy:.4f}, "
             f"LR: {optimizer.param_groups[0]['lr']:.6f}"
         )
-
         torch.save(model.state_dict(), './imitator/model_saves/imitator_y.pth')
 
     # ------ Plotting Loss and Accuracy Curves ------
@@ -179,7 +173,6 @@ def train():
     plt.ylabel("Loss")
     plt.legend()
     plt.title("Loss vs Epoch")
-
     plt.subplot(1,2,2)
     plt.plot(test_accuracies, label="Test Accuracy")
     plt.xlabel("Epoch")
@@ -188,11 +181,11 @@ def train():
     plt.legend()
     plt.tight_layout()
     plt.show()
-
     return model
     # ----------------------------------------------
 
 if __name__ == "__main__":
+    # Run training if executed as script
     model = train()
     gen = load_batch(TEST_PATH, batch_size=1)
     boards, moves = next(gen)

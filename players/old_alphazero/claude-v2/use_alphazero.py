@@ -20,7 +20,7 @@ import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from players.alphazero import AlphaZero, create_alphazero_player
+from players.az import AlphaZero, create_alphazero_player
 from players.alphazero_trainer import AlphaZeroTrainer, TrainingConfig, train_new_model
 from othello.othello_game import OthelloGame
 

@@ -1,8 +1,14 @@
+"""
+Othello board visualization and interactive play module.
+Provides functions to display the board state and run interactive games with human and AI players.
+"""
+
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 import numpy as np
 import time
 from othello.othello_game import OthelloGame, get_valid
+
 
 def show_state(
     board,
@@ -19,6 +25,10 @@ def show_state(
     heatmap_alpha=0.55,
     show_colorbar=True,
 ):
+    """
+    Display the Othello board state using matplotlib.
+    Optionally overlays valid moves, heatmap, and a message.
+    """
     n = 8
     valid_moves = get_valid(board, player)
     fig, ax = plt.subplots(figsize=(6, 6))
@@ -26,17 +36,13 @@ def show_state(
     # Make extra space at the bottom for the message
     fig.subplots_adjust(bottom=0.18)
 
+    # Set up board grid and labels
     ax.set_xlim(0, n)
     ax.set_ylim(0, n)
-    
-    # Add ticks for grid lines at every cell boundary (as before)
     ax.set_xticks(np.arange(n+1))
     ax.set_yticks(np.arange(n+1))
-
-    # Add labels centered between grid lines for each row/column (1-based, like Othello)
     ax.set_xticklabels([''] + ['\n'+str(i+1)+'            ' for i in range(n)])  # '' for left margin
     ax.set_yticklabels([''] + ['\n\n\n'+str(n-i)+'   ' for i in range(n)])  # '' for bottom margin, rows top-down
-
     ax.grid(True, which='both', color='black', linewidth=1)
 
     # Set background color
@@ -67,6 +73,7 @@ def show_state(
     else:
         available_color = valid_move_color
 
+    # Draw pieces and valid moves
     for y in range(n):
         for x in range(n):
             piece = board[y][x]
@@ -89,14 +96,12 @@ def show_state(
     fig.canvas.draw()
     fig.canvas.flush_events()
 
-        # Add hover coordinate display
+    # Add hover coordinate display
     hover_text = fig.text(0.5, -0.04, "", ha='center', va='top', fontsize=14, color='purple')
 
     def format_hover(event):
-        # event.xdata and event.ydata are float board coordinates (None if out of axes)
+        # Display board coordinates on hover
         if event.inaxes == ax and event.xdata is not None and event.ydata is not None:
-            # Board is from (0,0) bottom left to (n, n) top right; but origin='upper' in imshow so we flip y
-            # Othello usually wants (1,1) as top-left (y=0, x=0)
             col = int(event.xdata)
             row = n - int(event.ydata)
             if 0 <= col < n and 1 <= row <= n:
@@ -120,11 +125,10 @@ def show_state(
     return fig, ax
 
 
-
 def play_interactive(game : OthelloGame, initial_state, is_human_turn_fn, choose_ai_move_fn, ai_move_pause=0, guidance=None):
     """
-    General interactive GUI game loop for any player setup.
-    Adds a pause after the AI move before flipping opponent pieces.
+    Run an interactive Othello game loop with human and AI players.
+    Handles board display, move selection, and guidance messages.
     """
     plt.ion()
     n = game.n
@@ -133,6 +137,7 @@ def play_interactive(game : OthelloGame, initial_state, is_human_turn_fn, choose
     current_state = [initial_state]
 
     def draw_board(state, message=None):
+        """Draw the board and optionally a message."""
         ax.clear()
         board, player = state
         valids = game.getValidMoves(board, player)
@@ -180,6 +185,7 @@ def play_interactive(game : OthelloGame, initial_state, is_human_turn_fn, choose
         draw_board((temp, -player))
 
     def onclick(event):
+        """Handle mouse click for human move selection."""
         if not is_human_turn_fn(current_state[0]):
             return
         if event.xdata is None or event.ydata is None:
@@ -194,10 +200,12 @@ def play_interactive(game : OthelloGame, initial_state, is_human_turn_fn, choose
     fig.canvas.mpl_connect('button_press_event', onclick)
 
     def has_valid_moves(state):
+        """Check if the current player has any valid moves."""
         board, player = state
         valids = game.getValidMoves(board, player)
         return np.any(valids[:-1])
 
+    # Main game loop
     while not game.isEnd(current_state[0]):
         # Show guidance if it's the human's turn
         message = guidance(current_state[0]) if guidance and is_human_turn_fn(current_state[0]) else None
@@ -230,6 +238,7 @@ def play_interactive(game : OthelloGame, initial_state, is_human_turn_fn, choose
     board = current_state[0][0]
     white = np.sum(board == 1)
     black = np.sum(board == -1)
+    # Announce result
     if white > black:
         result_msg = f"            WHITE WINS!!!               \n               {white}-{black}               "
     elif black > white:

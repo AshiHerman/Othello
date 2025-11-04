@@ -1,6 +1,8 @@
 import math
 import random
 
+from players.player import Player
+
 from othello.othello_game import OthelloGame
 
 # ------------ Configuration ------------
@@ -104,11 +106,15 @@ def mcts(problem, state, episodes=EPISODES_PER_MOVE, c=EXPLORATION_CONSTANT):
 
 
 # ------------ Move Selection Interface ------------
-class MCTS():
-    def choose_move(self, state, problem = OthelloGame(8), episodes=EPISODES_PER_MOVE, c=EXPLORATION_CONSTANT):
+class MCTS(Player):
+    def __init__(self, sims):
+        super().__init__(name="MCTS")
+        self.sims = sims
+
+    def choose_move(self, state, problem = OthelloGame(8), c=EXPLORATION_CONSTANT):
         """
         Runs MCTS from the current state and returns the action with the highest visit count.
         """
-        root = mcts(problem, state, episodes, c)
+        root = mcts(problem, state, self.sims, c)
         best = max(root.children, key=lambda ch: ch.visits)
         return best.action

@@ -1,24 +1,28 @@
-from players.alphazero import AlphaZero
-from players.imitator import Imitator
-from othello.othello_game import OthelloGame, get_valid
+"""
+guidance.py - Provides move guidance and probability estimates for Othello using AlphaZero and Imitator models.
+"""
 
-import numpy as np
-from othello.othello_visualizer import play_interactive, show_state
+from players.az import AlphaZero
+from players.imit import Imitator
+from othello.othello_game import OthelloGame
 
+# Initialize game and AI models
 GAME = OthelloGame(8)
-AZ = AlphaZero(GAME)
+AZ = AlphaZero()
 IM = Imitator()
 
 def move_str(move):
+    """Convert move index to board coordinates (row, col)."""
     return f"({(move//8)+1}, {(move%8)+1})"
 
 def get_win_prob(state, action):
+    """Estimate win probability for a given state and action using AlphaZero's neural net."""
     next_state = GAME.enact(state, action)
     v = AZ.nnet.predict(next_state[0]*next_state[1])[1][0]
     return f"{(1-((v + 1) / 2)):.3f}"
 
 def show_probs(state):
-    """Show move probabilities for the current state."""    
+    """Show move suggestions and win probabilities for the current state from both models."""
     imitator_move = IM.choose_move(state)
     alpha_move = AZ.choose_move(state)
 
@@ -27,8 +31,8 @@ def show_probs(state):
     # imitator_move_str = f"Imitator move: {move_str(imitator_move)}, probability: {pi[imitator_move]:.3f}"
 
     if imitator_move == alpha_move:
-        alpha_move_str = "                                                                                           "#               AlphaZero and Imitator agree on the move.               "
-        imitator_move_str = "                                                                                           "#               Go ahead and play it!               "
+        alpha_move_str = f"                          Both models expect: {move_str(alpha_move)}                           "#               AlphaZero and Imitator agree on the move.               "
+        imitator_move_str = f"                         With win probability: {get_win_prob(state, alpha_move)}                        "#               Go ahead and play it!               "
     else:
         alpha_move_str = f"AlphaZero suggests: {move_str(alpha_move)} with win probability: {get_win_prob(state, alpha_move)}"
         imitator_move_str = f"While imitator expects: {move_str(imitator_move)} with win probability: {get_win_prob(state, imitator_move)}"

@@ -1,18 +1,19 @@
 from players.mcts import MCTS
-from players.imitator import Imitator
-from players.alphazero import AlphaZero
+from players.imit import Imitator
+from players.az import AlphaZero
 from othello.othello_game import OthelloGame
 from othello.othello_visualizer import play_interactive
 from guidance import *
 
 BOARD_SIZE = 8
+MCTS_SIMS = 100
+AZ_SIMS = 25
 
 # AI player factory
 AI_PLAYERS = {
-    'm': ('MCTS', lambda : MCTS()),
+    'm': ('MCTS', lambda : MCTS(MCTS_SIMS)),
     'i': ('Imitator', lambda : Imitator()),
-    'z': ('AlphaZero', lambda : AlphaZero(OthelloGame(BOARD_SIZE)) if AlphaZero.is_available() 
-          else print("AlphaZero not available, using MCTS") or MCTS())
+    'z': ('AlphaZero', lambda : AlphaZero(AZ_SIMS))
 }
 
 def get_ai_player():
@@ -52,13 +53,12 @@ def play_ai_vs_ai(game, ai1, ai2, num_games=100):
     
     for i in range(1, num_games + 1):
         state = game.startState(1)
-        current_ai = ai1 if i % 2 == 1 else ai2  # Alternate starting player
         
         while not game.isEnd(state):
             if state[1] == 1:
-                action = ai1.choose_move(game, state)
+                action = ai1.choose_move(state)
             else:
-                action = ai2.choose_move(game, state)
+                action = ai2.choose_move(state)
             state = game.enact(state, action)
         
         # Record result
@@ -120,7 +120,7 @@ def main():
             break
             
         elif mode == '2':
-            play_human_vs_human()
+            play_human_vs_human(game)
             break
             
         elif mode == 's':

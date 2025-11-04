@@ -2,6 +2,9 @@ import sys
 import os
 import logging
 
+from othello.othello_game import OthelloGame
+from players.player import Player
+
 # Add alphazero directory to Python path
 sys.path.append(os.path.join(os.path.dirname(__file__), 'alphazero'))
 
@@ -11,16 +14,18 @@ from alphazero.MCTS import MCTS as AlphaZeroMCTS
 from alphazero.utils import dotdict
 from alphazero.othello.OthelloGame import OthelloGame as AlphaZeroOthelloGame
 ALPHAZERO_AVAILABLE = True
+GAME = OthelloGame(8)
 
 
-class AlphaZero:
+class AlphaZero(Player):
     """AlphaZero AI player using the 8x8 pretrained model"""
     
-    def __init__(self, game, num_sims=25, board_size=8):
+    def __init__(self, num_sims=25, board_size=8):
+        super().__init__(name="AlphaZero")
         if not ALPHAZERO_AVAILABLE:
             raise ImportError("AlphaZero dependencies not available")
         
-        self.game = game
+        self.game = GAME
         self.board_size = board_size
         
         # Suppress AlphaZero logging
@@ -55,11 +60,12 @@ class AlphaZero:
         """Choose the best move using AlphaZero MCTS + neural network"""
         player = state[1]
         board = state[0] if player == 1 else -state[0]
+        # print(board)
         pi = self.mcts.getActionProb(board, temp=1)  # temp=0 for deterministic play
         # print(f"AlphaZero move probabilities: {pi}")
         return max(range(len(pi)), key=lambda i: pi[i])
     
-    @staticmethod
-    def is_available():
-        """Check if AlphaZero can be used"""
-        return ALPHAZERO_AVAILABLE
+    # @staticmethod
+    # def is_available():
+    #     """Check if AlphaZero can be used"""
+    #     return ALPHAZERO_AVAILABLE
